@@ -1,10 +1,10 @@
 import os 
 import click
-import sqlite3
+from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
 
 app = Flask(__name__)
-app.config.from_object(__name__)
+
 
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'flaskr.db'),
@@ -12,6 +12,7 @@ app.config.update(dict(
     USERNAME='admin',
     PASSWORD='default'
 ))
+#app.config.from_object(__name__)
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)
 
 def connect_db():
@@ -36,7 +37,7 @@ def get_db():
     """ opens a new database connection if there is none yet (application context)."""
     if not hasattr(g, 'sqlite_db'):
         g.sqlite_db = connect_db()
-        return g.sqlite_db
+    return g.sqlite_db
     
 @app.teardown_appcontext
 def close_db(error):
@@ -46,8 +47,8 @@ def close_db(error):
         
 @app.route('/')
 def show_entries():
-    db = get_db
-    cur = db.execute('select title, text from entries older by id desc')
+    db = get_db()
+    cur = db.execute('select title, text from entries order by id desc')
     entries = cur.fetchall()
     return render_template('show_entries.html', entries=entries)
 
@@ -71,7 +72,7 @@ def login():
             ERROR = 'Invalid password'
         else:
             session['logged_in'] = True
-            flah('You were logged in')
+            flash('You were logged in')
             return redirect(url_for('show_entries'))
     return render_template('login.html', error=error)
 
